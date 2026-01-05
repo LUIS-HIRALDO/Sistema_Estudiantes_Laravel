@@ -1,0 +1,10 @@
+[2026-01-05 18:49:00] Email a: arriannypolanco@gmail.com | Subject: Registro en Sistema de Estudiantes - Cuenta Pendiente de Aprobación | Status: Fallido
+Error Output: 
+Contenido:
+Hola Arriany,
+
+Su cuenta ha sido creada exitosamente pero se encuentra inhabilitada hasta que un representante le habilite el acceso.
+
+Atentamente,
+Administración.
+-------------------

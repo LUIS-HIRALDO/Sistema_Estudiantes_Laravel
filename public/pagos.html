@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pagos - Sistema de Estudiantes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        nav a.logout {
+            color: #e74c3c;
+        }
+
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .content p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💳 Gestión de Pagos</h1>
+            <nav>
+                <a href="./dashboard.html">Dashboard</a>
+                <a href="./usuarios.html">Usuarios</a>
+                <a href="./estudiantes.html">Estudiantes</a>
+                <a href="./estudiantes_tecnicos.html">Estudiantes Técnicos</a>
+                <a href="./profesores.html">Profesores</a>
+                <a href="./materias.html">Materias</a>
+                <a href="./materias_tecnicas.html">Módulos</a>
+                <a href="./notas.html">Notas</a>
+                <a href="./pagos.html" style="background: #667eea; color: white;">Pagos</a>
+                <a href="./generar_qr.html">Generar QR</a>
+                <a href="#" onclick="logout()" class="logout">Salir</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <h2>Gestión de Pagos</h2>
+            <p>Esta sección está en desarrollo. Aquí podrás gestionar todos los pagos del sistema.</p>
+            <a href="./dashboard.html" class="btn">Volver al Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = './login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = './login.html';
+        }
+    </script>
+</body>
+</html>

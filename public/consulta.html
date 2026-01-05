@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta de Calificaciones</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+body{
+    background: linear-gradient(135deg,#0b5ed7,#0dcaf0);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family: "Segoe UI", system-ui, sans-serif;
+}
+.card{
+    border-radius:18px;
+    border:none;
+}
+.header{
+    background:#0b5ed7;
+    color:white;
+    padding:20px;
+    border-radius:18px 18px 0 0;
+    text-align:center;
+}
+.header i{
+    font-size:38px;
+}
+.input-group-text{
+    background:#f1f5f9;
+}
+.badge-nota{
+    font-size:15px;
+}
+.aprobado{color:#198754}
+.reprobado{color:#dc3545}
+</style>
+</head>
+<body>
+
+<div class="container">
+<div class="row justify-content-center">
+<div class="col-md-8 col-lg-7">
+
+<div class="card shadow-lg">
+
+<div class="header">
+    <i class="bi bi-mortarboard-fill"></i>
+    <h4 class="fw-bold mt-2">Consulta de Calificaciones</h4>
+    <p class="mb-0">Sistema Académico Institucional</p>
+</div>
+
+<div class="card-body p-4">
+
+<div class="mb-4">
+<label class="form-label fw-semibold">Matrícula del estudiante</label>
+<div class="input-group input-group-lg">
+<span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+<input type="text" id="matricula" class="form-control" placeholder="Ej: 2025-001">
+<button class="btn btn-outline-dark" type="button" onclick="toggleScanner()">
+    <i class="bi bi-qr-code-scan"></i> Escanear
+</button>
+</div>
+</div>
+
+<div id="reader-container" class="d-none mb-4 border rounded p-2 bg-light">
+    <div id="reader" style="width: 100%"></div>
+    <div class="text-center mt-2">
+        <button class="btn btn-danger btn-sm" onclick="stopScanner()">Cancelar Cámara</button>
+    </div>
+</div>
+
+<button class="btn btn-primary btn-lg w-100 mb-4" onclick="consultarNotas()">
+<i class="bi bi-search"></i> Consultar
+</button>
+
+<div id="mensaje" class="alert alert-danger text-center d-none"></div>
+
+<div id="resultado" class="d-none">
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="border rounded p-3 bg-light flex-grow-1 me-2">
+        <strong>Estudiante:</strong>
+        <span id="nombreEstudiante"></span>
+        <br>
+        <small class="text-muted" id="tipoEstudiante"></small>
+    </div>
+    <button class="btn btn-danger" onclick="descargarPDF()">
+        <i class="bi bi-file-earmark-pdf-fill"></i> PDF
+    </button>
+</div>
+
+<div class="table-responsive">
+    <div class="accordion" id="accordionNotas">
+        <!-- Las notas se inyectarán aquí dinámicamente -->
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+<h5 class="mb-0">
+Promedio General:
+<span id="promedio" class="badge bg-primary badge-nota"></span>
+</h5>
+<span id="estadoFinal" class="fw-bold"></span>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<script>
+const baseUrl = './index.php';
+let html5QrcodeScanner = null;
+let cachedInstitutionData = null;
+
+// Pre-cargar datos e imágenes de la institución
+document.addEventListener('DOMContentLoaded', () => {
+    fetch(`${baseUrl}/institucion`)
+        .then(res => res.json())
+        .then(data => {
+            cachedInstitutionData = data;
+            // Pre-cargar imágenes en memoria del navegador
+            const imagesToPreload = [];
+            
+            if(data.logo_minerd_url) imagesToPreload.push(data.logo_minerd_url);
+            if(data.logo_url) imagesToPreload.push(data.logo_url);
+            if(data.firma_url) imagesToPreload.push(data.firma_url);
+            if(data.sello_url) imagesToPreload.push(data.sello_url);
+
+            imagesToPreload.forEach(url => {
+                const img = new Image();
+                img.src = url;
+            });
+        })
+        .catch(err => console.error('Error precargando institución:', err));
+});
+
+/* Leer matrícula desde QR */
+const params = new URLSearchParams(window.location.search);
+if(params.has('matricula')){
+    document.getElementById('matricula').value = params.get('matricula');
+    consultarNotas();
+}
+
+function toggleScanner() {
+    const container = document.getElementById('reader-container');
+    if (container.classList.contains('d-none')) {
+        startScanner();
+    } else {
+        stopScanner();
+    }
+}
+
+function startScanner() {
+    document.getElementById('reader-container').classList.remove('d-none');
+    
+    html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", 
+        { fps: 10, qrbox: {width: 250, height: 250} },
+        /* verbose= */ false
+    );
+    
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+}
+
+function stopScanner() {
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear().then(() => {
+            document.getElementById('reader-container').classList.add('d-none');
+            html5QrcodeScanner = null;
+        }).catch(error => {
+            console.error("Failed to clear html5QrcodeScanner. ", error);
+        });
+    } else {
+        document.getElementById('reader-container').classList.add('d-none');
+    }
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    // Handle the scanned code as you like, for example:
+    console.log(`Code matched = ${decodedText}`, decodedResult);
+    
+    document.getElementById('matricula').value = decodedText;
+    stopScanner();
+    consultarNotas();
+}
+
+function onScanFailure(error) {
+    // handle scan failure, usually better to ignore and keep scanning.
+    // for example:
+    // console.warn(`Code scan error = ${error}`);
+}
+
+async function consultarNotas(){
+    const matricula = document.getElementById('matricula').value.trim();
+    const mensaje = document.getElementById('mensaje');
+    const resultado = document.getElementById('resultado');
+
+    mensaje.classList.add('d-none');
+    resultado.classList.add('d-none');
+
+    if(!matricula) {
+        mensaje.textContent = "Por favor ingrese una matrícula.";
+        mensaje.classList.remove('d-none');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${baseUrl}/consulta/notas/${encodeURIComponent(matricula)}`);
+        
+        if(!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Estudiante no encontrado');
+        }
+
+        const data = await response.json();
+        
+        document.getElementById('nombreEstudiante').textContent = data.estudiante;
+        document.getElementById('tipoEstudiante').textContent = `Modalidad: ${data.tipo}`;
+
+        let suma = 0;
+        let count = 0;
+        let todoAprobado = true; 
+        const accordion = document.getElementById('accordionNotas');
+        accordion.innerHTML = "";
+
+        if (data.notas.length === 0) {
+            accordion.innerHTML = `<div class="alert alert-info text-center">No hay calificaciones registradas</div>`;
+            document.getElementById('promedio').textContent = "-";
+            document.getElementById('estadoFinal').textContent = "";
+        } else {
+            // Agrupar notas por módulo
+            const modulos = {};
+            
+            data.notas.forEach(n => {
+                if (!modulos[n.modulo]) {
+                    modulos[n.modulo] = {
+                        nombre: n.modulo,
+                        ras: [],
+                        totalPuntos: 0,
+                        totalValor: 0
+                    };
+                }
+                
+                const notaVal = parseFloat(n.nota);
+                const valorTotal = parseFloat(n.valor) || 100;
+                
+                // Guardar RA
+                modulos[n.modulo].ras.push({
+                    nombre: n.ra,
+                    nota: notaVal,
+                    valor: valorTotal,
+                    aprobado: notaVal >= (valorTotal * 0.7),
+                    desglose: n.desglose || null // Capturamos el desglose si existe
+                });
+
+                // Acumular para promedio general
+                if (!isNaN(notaVal)) {
+                    modulos[n.modulo].totalPuntos += notaVal;
+                    modulos[n.modulo].totalValor += valorTotal;
+                    
+                    // Para promedio general usamos porcentaje de logro
+                    const porcentajeLogro = (notaVal / valorTotal) * 100;
+                    suma += porcentajeLogro;
+                    count++;
+                }
+
+                // Verificar aprobación individual
+                if (notaVal < (valorTotal * 0.7)) {
+                    todoAprobado = false;
+                }
+            });
+
+            // Generar HTML del acordeón
+            let index = 0;
+            for (const key in modulos) {
+                const mod = modulos[key];
+                index++;
+                
+                // Calcular nota del módulo (suma de puntos obtenidos)
+                // Para técnico es suma directa. Para académico (si viniera detallado) sería promedio.
+                const notaModulo = mod.totalPuntos;
+                const valorModulo = mod.totalValor;
+                const porcentajeModulo = valorModulo > 0 ? (notaModulo / valorModulo) * 100 : 0;
+                const aprobadoModulo = porcentajeModulo >= 70;
+                
+                const colorClase = aprobadoModulo ? 'text-success' : 'text-danger';
+                const bgBadge = aprobadoModulo ? 'bg-success' : 'bg-danger';
+
+                // Lógica de visualización según tipo
+                let badgeText = `${notaModulo.toFixed(0)} / ${valorModulo.toFixed(0)}`;
+                if (data.tipo === 'Académico') {
+                     // Para académico mostramos el promedio (0-100)
+                     badgeText = `${porcentajeModulo.toFixed(0)}`;
+                }
+
+                let rasHtml = '<ul class="list-group list-group-flush">';
+                mod.ras.forEach(ra => {
+                    const raColor = ra.aprobado ? 'text-success' : 'text-danger';
+                    
+                    // Si hay desglose (Académico), mostramos el formato detallado horizontal
+                    if (ra.desglose && ra.desglose.length > 0) {
+                        let detallesHtml = '';
+                        ra.desglose.forEach(d => {
+                            // Formato: Comp1 (100) o Comp1 (60 RP:80)
+                            let notaStr = `<span class="fw-bold text-dark">${d.nota}</span>`;
+                            if (d.rp && d.rp > 0) {
+                                notaStr = `<span class="text-decoration-line-through text-muted small">${d.nota}</span> <span class="text-primary fw-bold">RP:${d.rp}</span>`;
+                            }
+                            
+                            detallesHtml += `
+                                <div class="d-inline-block me-3 mb-1" style="font-size: 0.9em;">
+                                    <span class="fw-semibold text-secondary">${d.competencia}:</span> ${notaStr}
+                                </div>
+                            `;
+                        });
+
+                        rasHtml += `
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold text-dark">${ra.nombre}</span>
+                                    <span class="badge ${ra.aprobado ? 'bg-success' : 'bg-danger'} rounded-pill">
+                                        Prom: ${ra.nota.toFixed(0)}
+                                    </span>
+                                </div>
+                                <div class="border-top pt-2 mt-1">
+                                    ${detallesHtml}
+                                </div>
+                            </li>
+                        `;
+                    } else {
+                        // Formato estándar (Técnico)
+                        rasHtml += `
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                ${ra.nombre}
+                                <span class="fw-bold ${raColor}">
+                                    ${ra.nota.toFixed(0)} / ${ra.valor.toFixed(0)}
+                                </span>
+                            </li>
+                        `;
+                    }
+                });
+                rasHtml += '</ul>';
+
+                accordion.innerHTML += `
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading${index}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}">
+                            <div class="d-flex justify-content-between w-100 me-3">
+                                <span>${mod.nombre}</span>
+                                <span class="badge ${bgBadge} rounded-pill">
+                                    ${badgeText}
+                                </span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse${index}" class="accordion-collapse collapse" data-bs-parent="#accordionNotas">
+                        <div class="accordion-body p-0">
+                            ${rasHtml}
+                        </div>
+                    </div>
+                </div>
+                `;
+            }
+
+            // Promedio de rendimiento (0-100%)
+            const prom = count > 0 ? Math.round(suma / count) : 0;
+            document.getElementById('promedio').textContent = prom + '%';
+
+            const estado = document.getElementById('estadoFinal');
+            
+            if(todoAprobado && data.notas.length > 0){
+                estado.textContent = "APROBADO";
+                estado.className = "aprobado fw-bold";
+            } else {
+                estado.textContent = "REPROBADO";
+                estado.className = "reprobado fw-bold";
+            }
+        }
+
+        resultado.classList.remove('d-none');
+
+    } catch (error) {
+        mensaje.textContent = error.message;
+        mensaje.classList.remove('d-none');
+    }
+}
+
+function descargarPDF() {
+    const element = document.getElementById('resultado');
+    const btn = element.querySelector('button'); // El botón de PDF
+    
+    // 1. Expandir todos los acordeones para que salgan los detalles
+    const collapses = element.querySelectorAll('.accordion-collapse');
+    collapses.forEach(c => {
+        c.classList.add('show');
+        // Ajustar atributos de accesibilidad
+        const parentBtn = document.querySelector(`[data-bs-target="#${c.id}"]`);
+        if(parentBtn) parentBtn.classList.remove('collapsed');
+    });
+
+    // 2. Ocultar el botón de descarga temporalmente
+    if(btn) btn.classList.add('d-none');
+
+    // 3. Configuración del PDF
+    // Usar datos cacheados o buscar si no existen
+    const dataPromise = cachedInstitutionData 
+        ? Promise.resolve(cachedInstitutionData) 
+        : fetch(`${baseUrl}/institucion`).then(res => res.json());
+
+    dataPromise.then(inst => {
+            
+            // Crear plantilla oculta para impresión
+            const printDiv = document.createElement('div');
+            printDiv.style.padding = '10px 20px';
+            printDiv.style.fontFamily = 'Times New Roman, serif';
+            printDiv.style.color = '#000';
+            printDiv.style.background = '#fff';
+            
+            // Encabezado Oficial
+            
+            // Logos: Top 0px para eliminar espacio superior extra
+            let logosHtml = '';
+            
+            // Mostrar logo Minerd si existe URL
+            if (inst.logo_minerd_url) {
+                logosHtml += `<img src="${inst.logo_minerd_url}" style="height:90px; position:absolute; left:0px; top:0px;">`;
+            }
+            
+            if (inst.logo_url) {
+                logosHtml += `<img src="${inst.logo_url}" style="height:90px; position:absolute; right:10px; top:0px;">`;
+            }
+
+            // Padding-top del texto reducido a 5px
+            printDiv.innerHTML = `
+                <div style="position:relative; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; min-height: 100px; padding-left: 150px; padding-right: 150px;">
+                    ${logosHtml}
+                    <h4 style="margin:0; font-weight:bold; text-transform:uppercase; padding-top: 5px;">Ministerio de Educación</h4>
+                    <h5 style="margin:5px 0;">Viceministerio de Servicios Técnicos y Pedagógicos</h5>
+                    <h5 style="margin:5px 0;">Dirección General de Educación Secundaria</h5>
+                    <h3 style="margin:15px 0; font-weight:bold; text-decoration:underline;">INFORME DE EVALUACIÓN DE LOS APRENDIZAJES</h3>
+                </div>
+
+                <div style="margin-bottom: 20px; border: 1px solid #000; padding: 10px;">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <tr>
+                            <td style="padding:2px;"><strong>Centro Educativo:</strong> ${inst.nombre || '___________________'}</td>
+                            <td style="padding:2px;"><strong>Código:</strong> ${inst.codigo || '_______'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px;"><strong>Tanda:</strong> ${inst.tanda || '___________________'}</td>
+                            <td style="padding:2px;"><strong>Teléfono:</strong> ${inst.telefono || '_______'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px;"><strong>Distrito Educativo:</strong> ${inst.distrito || '_______'}</td>
+                            <td style="padding:2px;"><strong>Regional:</strong> ${inst.regional || '_______'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:2px;"><strong>Provincia:</strong> ${inst.provincia || '___________________'}</td>
+                            <td style="padding:2px;"><strong>Municipio:</strong> ${inst.municipio || '___________________'}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <p><strong>Estudiante:</strong> ${document.getElementById('nombreEstudiante').textContent}</p>
+                    <p><strong>Matrícula:</strong> ${document.getElementById('matricula').value}</p>
+                    <p>${document.getElementById('tipoEstudiante').textContent.replace('Modalidad:', '<strong>Modalidad:</strong>')}</p>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    ${generarTablaImpresion(element)}
+                </div>
+                
+                <div style="margin-top: 50px; text-align: center; position: relative; page-break-inside: avoid;">
+                    ${inst.firma_url ? `<img src="${inst.firma_url}" style="height:80px; position: absolute; bottom: 25px; left: 0; right: 0; margin: auto; z-index: 5;">` : ''}
+                    <div style="margin-bottom:5px;">______________________________________</div>
+                    <div style="font-weight:bold;">Firma y Sello del Director/a</div>
+                    ${inst.sello_url ? `<img src="${inst.sello_url}" style="height:100px; position:absolute; top:-40px; left:50%; margin-left:40px; opacity:0.8; z-index:10;">` : ''}
+                </div>
+            `;
+
+            const opt = {
+                margin:       [0.2, 0.5, 0.5, 0.5],
+                filename:     `Boletin_${document.getElementById('matricula').value}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(printDiv).save().then(() => {
+                if(btn) btn.classList.remove('d-none');
+            });
+        });
+}
+
+function generarTablaImpresion(sourceElement) {
+    const tipoTexto = document.getElementById('tipoEstudiante').textContent;
+    const isAcademico = tipoTexto.includes('Académico');
+
+    if (isAcademico) {
+        // Tabla estilo Boletín para Académico (Matriz P1-P4)
+        let html = '<table style="width:100%; border-collapse:collapse; border:1px solid #000; font-size:12px; margin-top:10px;">';
+        html += `
+            <thead>
+                <tr style="background:#e9ecef; text-align:center;">
+                    <th style="border:1px solid #000; padding:8px; width:40%;">Asignatura</th>
+                    <th style="border:1px solid #000; padding:8px;">P1</th>
+                    <th style="border:1px solid #000; padding:8px;">P2</th>
+                    <th style="border:1px solid #000; padding:8px;">P3</th>
+                    <th style="border:1px solid #000; padding:8px;">P4</th>
+                    <th style="border:1px solid #000; padding:8px; background:#dee2e6;">C.F.</th>
+                </tr>
+            </thead>
+            <tbody>
+        `;
+
+        const items = sourceElement.querySelectorAll('.accordion-item');
+        items.forEach(item => {
+            const nombreAsignatura = item.querySelector('.accordion-button span').textContent.trim();
+            
+            // Inicializar notas
+            let notas = { 'P1': '', 'P2': '', 'P3': '', 'P4': '' };
+            let suma = 0;
+            let count = 0;
+
+            // Buscar notas en los elementos li
+            const lis = item.querySelectorAll('li');
+            lis.forEach(li => {
+                // El nombre del periodo (P1, P2...)
+                const nombreEl = li.querySelector('.fw-bold.text-dark');
+                if(!nombreEl) return;
+                
+                const nombrePeriodo = nombreEl.textContent.trim();
+                
+                // La nota está en el badge: "Prom: 90"
+                const badgeEl = li.querySelector('.badge');
+                if(!badgeEl) return;
+                
+                const badgeText = badgeEl.textContent.trim();
+                const notaMatch = badgeText.match(/Prom:\s*(\d+)/);
+                
+                if (notaMatch) {
+                    const nota = parseInt(notaMatch[1]);
+                    if (['P1', 'P2', 'P3', 'P4'].includes(nombrePeriodo)) {
+                        notas[nombrePeriodo] = nota;
+                        suma += nota;
+                        count++;
+                    }
+                }
+            });
+
+            const cf = count === 4 ? Math.round(suma / count) : '';
+
+            html += `
+                <tr>
+                    <td style="border:1px solid #000; padding:6px;">${nombreAsignatura}</td>
+                    <td style="border:1px solid #000; padding:6px; text-align:center;">${notas['P1']}</td>
+                    <td style="border:1px solid #000; padding:6px; text-align:center;">${notas['P2']}</td>
+                    <td style="border:1px solid #000; padding:6px; text-align:center;">${notas['P3']}</td>
+                    <td style="border:1px solid #000; padding:6px; text-align:center;">${notas['P4']}</td>
+                    <td style="border:1px solid #000; padding:6px; text-align:center; font-weight:bold; background:#f8f9fa;">${cf}</td>
+                </tr>
+            `;
+        });
+        html += '</tbody></table>';
+        
+        // Pie de tabla con leyenda
+        html += `
+            <div style="margin-top:10px; font-size:10px;">
+                <strong>Leyenda:</strong> P1: Primer Periodo | P2: Segundo Periodo | P3: Tercer Periodo | P4: Cuarto Periodo | C.F.: Calificación Final
+            </div>
+        `;
+        
+        return html;
+
+    } else {
+        // Tabla para Técnico (Módulo | RA | Nota)
+        let html = '<table style="width:100%; border-collapse:collapse; border:1px solid #000; font-size:12px; margin-top:10px;">';
+        html += `
+            <thead>
+                <tr style="background:#e9ecef;">
+                    <th style="border:1px solid #000; padding:8px;">Módulo Formativo</th>
+                    <th style="border:1px solid #000; padding:8px;">Resultados de Aprendizaje (RA)</th>
+                    <th style="border:1px solid #000; padding:8px; width:15%;">Calificación</th>
+                </tr>
+            </thead>
+            <tbody>
+        `;
+        
+        const items = sourceElement.querySelectorAll('.accordion-item');
+        items.forEach(item => {
+            const nombreModulo = item.querySelector('.accordion-button span').textContent.trim();
+            const notaModulo = item.querySelector('.accordion-button .badge').textContent.trim();
+            
+            // Obtener RAs
+            let rasHtml = '<table style="width:100%; border-collapse:collapse; border:none;">';
+            const lis = item.querySelectorAll('li');
+            lis.forEach(li => {
+                // Extraer nota (está en el span)
+                const spanNota = li.querySelector('span');
+                const textoNota = spanNota ? spanNota.textContent.trim() : '';
+                
+                // Extraer nombre (todo el texto menos la nota)
+                let nombreRA = li.textContent;
+                if(textoNota) {
+                    nombreRA = nombreRA.replace(textoNota, '').trim();
+                }
+
+                rasHtml += `
+                    <tr>
+                        <td style="border-bottom:1px dotted #ccc; padding:2px; text-align:left;">${nombreRA}</td>
+                        <td style="border-bottom:1px dotted #ccc; padding:2px; text-align:right; font-weight:bold; white-space:nowrap;">${textoNota}</td>
+                    </tr>
+                `;
+            });
+            rasHtml += '</table>';
+
+            html += `
+                <tr style="page-break-inside: avoid;">
+                    <td style="border:1px solid #000; padding:6px; vertical-align:top;">
+                        ${nombreModulo}
+                    </td>
+                    <td style="border:1px solid #000; padding:6px;">${rasHtml}</td>
+                    <td style="border:1px solid #000; padding:6px; text-align:center; vertical-align:middle;">${notaModulo}</td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        return html;
+    }
+}
+</script>
+
+</body>
+</html>

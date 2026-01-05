@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Materias - Sistema de Estudiantes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        nav a.logout {
+            color: #e74c3c;
+        }
+
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 20px;
+        }
+
+        .header-content h2 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        table th {
+            padding: 15px;
+            text-align: left;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        table td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+            color: #666;
+        }
+
+        table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            color: #333;
+            margin: 0;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            border-top: 2px solid #f0f0f0;
+            padding-top: 20px;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📖 Gestión de Materias</h1>
+            <nav>
+                <a href="./dashboard.html">Dashboard</a>
+                <a href="./usuarios.html">Usuarios</a>
+                <a href="./estudiantes.html">Estudiantes</a>
+                <a href="./estudiantes_tecnicos.html">Estudiantes Técnicos</a>
+                <a href="./profesores.html">Profesores</a>
+                <a href="./materias.html" style="background: #667eea; color: white;">Materias</a>
+                <a href="./materias_tecnicas.html">Módulos</a>
+                <a href="./notas.html">Notas</a>
+                <a href="./pagos.html">Pagos</a>
+                <a href="./generar_qr.html">Generar QR</a>
+                <a href="#" onclick="logout()" class="logout">Salir</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <div id="message" class="message"></div>
+
+            <div class="header-content">
+                <h2>Listado de Materias</h2>
+                <button class="btn btn-primary" onclick="openAddModal()">+ Nueva Materia</button>
+            </div>
+
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Cargando materias...</p>
+            </div>
+
+            <div id="table-container" style="display: none;">
+                <table id="materias-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Código</th>
+                            <th>Grado</th>
+                            <th>Créditos</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="materias-tbody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">📭</div>
+                <h3>No hay materias</h3>
+                <p>Comienza creando la primera materia</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para crear/editar materia -->
+    <div id="materiaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nueva Materia</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+
+            <form id="materiaForm">
+                <div class="form-group">
+                    <label for="nombre">Nombre *</label>
+                    <input type="text" id="nombre" name="nombre" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="codigo">Código *</label>
+                    <input type="text" id="codigo" name="codigo" placeholder="Ej: MAT-101" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="grado">Grado(s) *</label>
+                    <input type="text" id="grado" name="grado" placeholder="Ej: 1, 2, 3 (Separados por coma)" required>
+                    <small style="color: #666; display: block; margin-top: 5px;">Ingrese el número del grado (1-6). Si la materia es para varios grados, sepárelos por coma.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="creditos">Créditos *</label>
+                    <input type="number" id="creditos" name="creditos" min="1" placeholder="Ej: 3" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="estado">Estado *</label>
+                    <select id="estado" name="estado" required>
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = './login.html';
+        }
+
+        const baseUrl = './index.php';
+        let materiaEditando = null;
+
+        // Cargar materias al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMaterias();
+        });
+
+        // Manejar envío del formulario
+        document.getElementById('materiaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveMateria();
+        });
+
+        async function loadMaterias() {
+            const loading = document.getElementById('loading');
+            const tableContainer = document.getElementById('table-container');
+            const emptyState = document.getElementById('empty-state');
+            const tbody = document.getElementById('materias-tbody');
+
+            loading.style.display = 'block';
+            tableContainer.style.display = 'none';
+            emptyState.style.display = 'none';
+
+            try {
+                const response = await fetch(`${baseUrl}/materias`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar materias');
+                }
+
+                const responseData = await response.json();
+                const materias = responseData.data || responseData;
+                tbody.innerHTML = '';
+
+                if (materias.length === 0) {
+                    loading.style.display = 'none';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                materias.forEach(materia => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${materia.id}</td>
+                        <td>${materia.nombre}</td>
+                        <td>${materia.codigo || '-'}</td>
+                        <td>${materia.grado || '-'}</td>
+                        <td>${materia.creditos || '-'}</td>
+                        <td>
+                            <span style="padding: 5px 10px; border-radius: 4px; ${materia.estado === 'activo' ? 'background: #d4edda; color: #155724;' : 'background: #f8d7da; color: #721c24;'}">
+                                ${materia.estado}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn btn-edit" onclick="editMateria(${materia.id})">Editar</button>
+                                <button class="btn btn-danger" onclick="deleteMateria(${materia.id})">Eliminar</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                loading.style.display = 'none';
+                tableContainer.style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                showMessage('Error al cargar las materias', 'error');
+            }
+        }
+
+        function openAddModal() {
+            materiaEditando = null;
+            document.getElementById('modalTitle').textContent = 'Nueva Materia';
+            document.getElementById('materiaForm').reset();
+            document.getElementById('materiaModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('materiaModal').classList.remove('active');
+            document.getElementById('materiaForm').reset();
+            materiaEditando = null;
+        }
+
+        async function editMateria(id) {
+            try {
+                const response = await fetch(`${baseUrl}/materias/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar la materia');
+                }
+
+                const materia = await response.json();
+                materiaEditando = id;
+
+                document.getElementById('nombre').value = materia.nombre || '';
+                document.getElementById('codigo').value = materia.codigo || '';
+                document.getElementById('grado').value = materia.grado || '';
+                document.getElementById('creditos').value = materia.creditos || '';
+                document.getElementById('estado').value = materia.estado || 'activo';
+
+                document.getElementById('modalTitle').textContent = `Editar Materia: ${materia.nombre}`;
+                document.getElementById('materiaModal').classList.add('active');
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error al cargar la materia', 'error');
+            }
+        }
+
+        async function saveMateria() {
+            const nombre = document.getElementById('nombre').value;
+            const codigo = document.getElementById('codigo').value;
+            const grado = document.getElementById('grado').value;
+            const creditos = document.getElementById('creditos').value;
+            const estado = document.getElementById('estado').value;
+
+            if (!nombre || !codigo || !grado || !creditos) {
+                showMessage('Por favor completa todos los campos requeridos', 'error');
+                return;
+            }
+
+            if (materiaEditando) {
+                await updateMateria(nombre, codigo, grado, creditos, estado);
+            } else {
+                await createMateria(nombre, codigo, grado, creditos, estado);
+            }
+        }
+
+        async function createMateria(nombre, codigo, grado, creditos, estado) {
+            try {
+                const data = {
+                    nombre,
+                    codigo,
+                    grado,
+                    creditos: parseInt(creditos),
+                    estado
+                };
+
+                const response = await fetch(`${baseUrl}/materias`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Error al crear materia');
+                }
+
+                showMessage('Materia creada exitosamente', 'success');
+                closeModal();
+                loadMaterias();
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage(error.message || 'Error al crear la materia', 'error');
+            }
+        }
+
+        async function updateMateria(nombre, codigo, grado, creditos, estado) {
+            try {
+                const data = {
+                    nombre,
+                    codigo,
+                    grado,
+                    creditos: parseInt(creditos),
+                    estado
+                };
+
+                const response = await fetch(`${baseUrl}/materias/${materiaEditando}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Error al actualizar materia');
+                }
+
+                showMessage('Materia actualizada exitosamente', 'success');
+                closeModal();
+                loadMaterias();
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage(error.message || 'Error al actualizar la materia', 'error');
+            }
+        }
+
+        async function deleteMateria(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar esta materia?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseUrl}/materias/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Error al eliminar materia');
+                }
+
+                showMessage('Materia eliminada exitosamente', 'success');
+                loadMaterias();
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage(error.message || 'Error al eliminar la materia', 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = './login.html';
+        }
+
+        // Cerrar modal al hacer clic afuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('materiaModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

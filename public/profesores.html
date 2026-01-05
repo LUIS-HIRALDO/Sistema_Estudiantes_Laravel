@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Profesores - Sistema de Estudiantes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        nav a.logout {
+            color: #e74c3c;
+        }
+
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 20px;
+        }
+
+        .header-content h2 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        #table-container {
+            overflow-x: auto;
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            /* margin-top: 20px; Eliminado porque el contenedor ya tiene margen */
+            min-width: 1000px; /* Asegurar ancho mínimo para evitar colapso excesivo */
+        }
+
+        table thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        table th {
+            padding: 15px;
+            text-align: left;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        table td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+            color: #666;
+        }
+
+        table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto; /* Permitir scroll en el fondo */
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: flex-start; /* Alinear arriba para permitir scroll */
+            justify-content: center;
+            padding: 40px 0; /* Espacio arriba y abajo */
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin: auto; /* Centrar horizontalmente */
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            color: #333;
+            margin: 0;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            border-top: 2px solid #f0f0f0;
+            padding-top: 20px;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👨‍🏫 Gestión de Profesores</h1>
+            <nav>
+                <a href="./dashboard.html">Dashboard</a>
+                <a href="./usuarios.html">Usuarios</a>
+                <a href="./estudiantes.html">Estudiantes</a>
+                <a href="./estudiantes_tecnicos.html">Estudiantes Técnicos</a>
+                <a href="./profesores.html" style="background: #667eea; color: white;">Profesores</a>
+                <a href="./materias.html">Materias</a>
+                <a href="./materias_tecnicas.html">Módulos</a>
+                <a href="./notas.html">Notas</a>
+                <a href="./pagos.html">Pagos</a>
+                <a href="./generar_qr.html">Generar QR</a>
+                <a href="#" onclick="logout()" class="logout">Salir</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <div id="message" class="message"></div>
+
+            <div class="header-content">
+                <h2>Listado de Profesores</h2>
+                <button class="btn btn-primary" onclick="openAddModal()">+ Nuevo Profesor</button>
+            </div>
+
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Cargando profesores...</p>
+            </div>
+
+            <div id="table-container" style="display: none;">
+                <table id="profesores-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Email</th>
+                            <th>Cédula</th>
+                            <th>Tipo</th>
+                            <th>Especialidad</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="profesores-tbody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">📭</div>
+                <h3>No hay profesores</h3>
+                <p>Comienza creando el primer profesor</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para crear/editar profesor -->
+    <div id="profesorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nuevo Profesor</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+
+            <form id="profesorForm">
+                <div class="form-group">
+                    <label for="nombre">Nombre *</label>
+                    <input type="text" id="nombre" name="nombre" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="apellido">Apellido *</label>
+                    <input type="text" id="apellido" name="apellido" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="cedula">Cédula *</label>
+                    <input type="text" id="cedula" name="cedula" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="tipo">Tipo de Profesor *</label>
+                    <select id="tipo" name="tipo" required onchange="toggleEspecialidadInput()">
+                        <option value="academico">Académico (Materias Básicas)</option>
+                        <option value="tecnico">Técnico (Módulos Formativos)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="group-especialidad-texto" style="display: none;">
+                    <label for="especialidad_texto">Materia / Especialidad *</label>
+                    <input type="text" id="especialidad_texto" placeholder="Ej: Matemáticas, Literatura">
+                </div>
+
+                <div class="form-group" id="group-materias-select" style="display: none;">
+                    <label>Materias Académicas *</label>
+                    <div id="materias_checkboxes" style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 10px; max-height: 200px; overflow-y: auto; background: #fff;">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                    <small class="text-muted" style="display:block; margin-top:5px; color:#666;">Selecciona las materias que impartirá este profesor.</small>
+                </div>
+
+                <div class="form-group" id="group-especialidad-select" style="display: none;">
+                    <label>Módulos Formativos *</label>
+                    <div id="especialidad_checkboxes" style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 10px; max-height: 200px; overflow-y: auto; background: #fff;">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                    <small class="text-muted" style="display:block; margin-top:5px; color:#666;">Selecciona las materias que impartirá este profesor.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="estado">Estado *</label>
+                    <select id="estado" name="estado" required>
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = './login.html';
+        }
+
+        const baseUrl = './index.php';
+        let profesorEditando = null;
+
+        // Cargar profesores al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfesores();
+            loadModulos();
+            loadMaterias();
+        });
+
+        // Manejar envío del formulario
+        document.getElementById('profesorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveProfesor();
+        });
+
+        async function loadMaterias() {
+            try {
+                const response = await fetch(`${baseUrl}/materias`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                const container = document.getElementById('materias_checkboxes');
+                container.innerHTML = ''; 
+                
+                (data.data || []).forEach(m => {
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '8px';
+                    div.innerHTML = `
+                        <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal;">
+                            <input type="checkbox" class="materia-checkbox" value="${m.id}" style="width: auto; margin-right: 10px; cursor: pointer;">
+                            ${m.nombre} (${m.grado})
+                        </label>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error cargando materias:', error);
+            }
+        }
+
+        async function loadModulos() {
+            try {
+                const response = await fetch(`${baseUrl}/calificaciones-tecnicas/modulos`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                const container = document.getElementById('especialidad_checkboxes');
+                container.innerHTML = ''; 
+                
+                (data.data || []).forEach(m => {
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '8px';
+                    div.innerHTML = `
+                        <label style="display: flex; align-items: center; cursor: pointer; font-weight: normal;">
+                            <input type="checkbox" class="modulo-checkbox" value="${m.nombre}" style="width: auto; margin-right: 10px; cursor: pointer;">
+                            ${m.nombre}
+                        </label>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error cargando módulos:', error);
+            }
+        }
+
+        function toggleEspecialidadInput() {
+            const tipo = document.getElementById('tipo').value;
+            const groupTexto = document.getElementById('group-especialidad-texto');
+            const groupSelect = document.getElementById('group-especialidad-select');
+            const groupMaterias = document.getElementById('group-materias-select');
+            
+            // Ocultar todo primero
+            groupTexto.style.display = 'none';
+            groupSelect.style.display = 'none';
+            groupMaterias.style.display = 'none';
+            document.getElementById('especialidad_texto').required = false;
+
+            if (tipo === 'tecnico') {
+                groupSelect.style.display = 'block';
+            } else if (tipo === 'academico') {
+                groupMaterias.style.display = 'block';
+            } else {
+                groupTexto.style.display = 'block';
+                document.getElementById('especialidad_texto').required = true;
+            }
+        }
+
+        async function loadProfesores() {
+            const loading = document.getElementById('loading');
+            const tableContainer = document.getElementById('table-container');
+            const emptyState = document.getElementById('empty-state');
+            const tbody = document.getElementById('profesores-tbody');
+
+            loading.style.display = 'block';
+            tableContainer.style.display = 'none';
+            emptyState.style.display = 'none';
+
+            try {
+                const response = await fetch(`${baseUrl}/profesores`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar profesores');
+                }
+
+                const responseData = await response.json();
+                const profesores = responseData.data || responseData;
+                tbody.innerHTML = '';
+
+                if (profesores.length === 0) {
+                    loading.style.display = 'none';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                profesores.forEach(profesor => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${profesor.id}</td>
+                        <td>${profesor.nombre}</td>
+                        <td>${profesor.apellido}</td>
+                        <td>${profesor.email}</td>
+                        <td>${profesor.cedula || '-'}</td>
+                        <td>
+                            <span class="badge ${profesor.tipo === 'tecnico' ? 'bg-info' : 'bg-secondary'}" style="padding: 4px 8px; border-radius: 4px; color: white; background-color: ${profesor.tipo === 'tecnico' ? '#17a2b8' : '#6c757d'}; font-size: 0.85em;">
+                                ${profesor.tipo === 'tecnico' ? 'Técnico' : 'Académico'}
+                            </span>
+                        </td>
+                        <td>${profesor.especialidad || '-'}</td>
+                        <td>
+                            <span style="padding: 5px 10px; border-radius: 4px; ${profesor.estado === 'activo' ? 'background: #d4edda; color: #155724;' : 'background: #f8d7da; color: #721c24;'}">
+                                ${profesor.estado}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn btn-edit" onclick="editProfesor(${profesor.id})">Editar</button>
+                                <button class="btn btn-warning" onclick="resetPassword(${profesor.id})" style="background: #ffc107; color: #212529; margin-left: 5px; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Restablecer Clave</button>
+                                <button class="btn btn-danger" onclick="deleteProfesor(${profesor.id})">Eliminar</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                loading.style.display = 'none';
+                tableContainer.style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                showMessage('Error al cargar los profesores', 'error');
+            }
+        }
+
+        function openAddModal() {
+            profesorEditando = null;
+            document.getElementById('modalTitle').textContent = 'Nuevo Profesor';
+            document.getElementById('profesorForm').reset();
+            toggleEspecialidadInput(); // Resetear visibilidad
+            document.getElementById('profesorModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('profesorModal').classList.remove('active');
+            document.getElementById('profesorForm').reset();
+            profesorEditando = null;
+        }
+
+        async function resetPassword(id) {
+            if (!confirm('¿Estás seguro de que deseas restablecer la contraseña de este profesor a su cédula?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseUrl}/profesores/${id}/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.error || 'Error al restablecer contraseña', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error de conexión', 'error');
+            }
+        }
+
+        async function editProfesor(id) {
+            try {
+                const response = await fetch(`${baseUrl}/profesores/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar el profesor');
+                }
+
+                const profesor = await response.json();
+                profesorEditando = id;
+
+                document.getElementById('nombre').value = profesor.nombre || '';
+                document.getElementById('apellido').value = profesor.apellido || '';
+                document.getElementById('email').value = profesor.email || '';
+                document.getElementById('cedula').value = profesor.cedula || '';
+                
+                // Configurar tipo y especialidad
+                const tipo = profesor.tipo || 'academico';
+                document.getElementById('tipo').value = tipo;
+                toggleEspecialidadInput(); // Actualizar visibilidad
+
+                if (tipo === 'tecnico') {
+                    // Pre-seleccionar módulos asignados
+                    // Normalizamos (trim y lowercase) para evitar problemas de espacios o mayúsculas
+                    const modulosAsignados = (profesor.modulos_asignados || []).map(m => m.trim().toLowerCase());
+                    const checkboxes = document.querySelectorAll('.modulo-checkbox');
+                    
+                    checkboxes.forEach(cb => {
+                        cb.checked = modulosAsignados.includes(cb.value.trim().toLowerCase());
+                    });
+                } else if (tipo === 'academico') {
+                    const materiasAsignadas = profesor.materias_asignadas || [];
+                    const checkboxes = document.querySelectorAll('.materia-checkbox');
+                    checkboxes.forEach(cb => {
+                        cb.checked = materiasAsignadas.some(id => id == cb.value);
+                    });
+                } else {
+                    document.getElementById('especialidad_texto').value = profesor.especialidad || '';
+                }
+
+                document.getElementById('estado').value = profesor.estado || 'activo';
+
+                document.getElementById('modalTitle').textContent = `Editar Profesor: ${profesor.nombre}`;
+                document.getElementById('profesorModal').classList.add('active');
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error al cargar el profesor', 'error');
+            }
+        }
+
+        async function saveProfesor() {
+            const nombre = document.getElementById('nombre').value;
+            const apellido = document.getElementById('apellido').value;
+            const email = document.getElementById('email').value;
+            const cedula = document.getElementById('cedula').value;
+            const tipo = document.getElementById('tipo').value;
+            const estado = document.getElementById('estado').value;
+            
+            // Obtener especialidad según el tipo
+            let especialidad;
+            if (tipo === 'tecnico') {
+                const checkboxes = document.querySelectorAll('.modulo-checkbox:checked');
+                especialidad = Array.from(checkboxes).map(cb => cb.value);
+                
+                if (especialidad.length === 0) {
+                    showMessage('Debes seleccionar al menos un módulo', 'error');
+                    return;
+                }
+            } else if (tipo === 'academico') {
+                const checkboxes = document.querySelectorAll('.materia-checkbox:checked');
+                especialidad = Array.from(checkboxes).map(cb => cb.value);
+                
+                if (especialidad.length === 0) {
+                    showMessage('Debes seleccionar al menos una materia', 'error');
+                    return;
+                }
+            } else {
+                especialidad = document.getElementById('especialidad_texto').value;
+            }
+
+            if (!nombre || !apellido || !email || !cedula || !especialidad) {
+                showMessage('Por favor completa todos los campos requeridos', 'error');
+                return;
+            }
+
+            if (profesorEditando) {
+                await updateProfesor(nombre, apellido, email, cedula, especialidad, tipo, estado);
+            } else {
+                await createProfesor(nombre, apellido, email, cedula, especialidad, tipo, estado);
+            }
+        }
+
+        async function createProfesor(nombre, apellido, email, cedula, especialidad, tipo, estado) {
+            try {
+                const data = {
+                    nombre,
+                    apellido,
+                    email,
+                    cedula,
+                    especialidad,
+                    tipo,
+                    estado
+                };
+
+                const response = await fetch(`${baseUrl}/profesores`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Error al crear profesor');
+                }
+
+                showMessage('Profesor creado exitosamente', 'success');
+                closeModal();
+                loadProfesores();
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage(error.message || 'Error al crear el profesor', 'error');
+            }
+        }
+
+        async function updateProfesor(nombre, apellido, email, cedula, especialidad, tipo, estado) {
+            try {
+                const data = {
+                    nombre,
+                    apellido,
+                    email,
+                    cedula,
+                    especialidad,
+                    tipo,
+                    estado
+                };
+
+                const response = await fetch(`${baseUrl}/profesores/${profesorEditando}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Error al actualizar profesor');
+                }
+
+                showMessage('Profesor actualizado exitosamente', 'success');
+                closeModal();
+                loadProfesores();
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage(error.message || 'Error al actualizar el profesor', 'error');
+            }
+        }
+
+        async function deleteProfesor(id) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este profesor?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseUrl}/profesores/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Error al eliminar profesor');
+                }
+
+                showMessage('Profesor eliminado exitosamente', 'success');
+                loadProfesores();
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage(error.message || 'Error al eliminar el profesor', 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = './login.html';
+        }
+
+        // Cerrar modal al hacer clic afuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('profesorModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

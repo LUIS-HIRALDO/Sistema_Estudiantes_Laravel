@@ -1,0 +1,8 @@
+[03-Jan-2026 02:49:54 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to undefined function App\Middleware\getallheaders() in C:\xampp\htdocs\Sistema_Estudiantes_Laravel\app\Middleware\AuthMiddleware.php:11
+Stack trace:
+#0 C:\xampp\htdocs\Sistema_Estudiantes_Laravel\app\helpers.php(85): App\Middleware\AuthMiddleware::check()
+#1 C:\xampp\htdocs\Sistema_Estudiantes_Laravel\app\Controllers\Controller.php(91): isAuthenticated()
+#2 C:\xampp\htdocs\Sistema_Estudiantes_Laravel\app\Controllers\CalificacionesAcademicasController.php(18): App\Controllers\Controller->requireAuth()
+#3 C:\xampp\htdocs\Sistema_Estudiantes_Laravel\test_endpoint_call.php(34): App\Controllers\CalificacionesAcademicasController->index()
+#4 {main}
+  thrown in C:\xampp\htdocs\Sistema_Estudiantes_Laravel\app\Middleware\AuthMiddleware.php on line 11

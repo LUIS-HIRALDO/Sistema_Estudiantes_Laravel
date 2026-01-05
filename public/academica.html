@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registro Académico por Período</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    header {
+        background: white;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    header h1 {
+        color: #333;
+        font-size: 24px;
+    }
+
+    nav a {
+        color: #667eea;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin-left: 10px;
+    }
+
+    nav a:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    nav a.logout {
+        color: #e74c3c;
+    }
+
+    .content {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .filters{
+        margin:20px 0;
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+        gap:12px;
+    }
+    .filters select, .filters input{
+        padding:10px;border-radius:6px;border:1px solid #cbd5e1;
+        width: 100%;
+    }
+    .table-box{
+        margin-top:20px;
+    }
+    .table-title{
+        font-weight:700;
+        margin-bottom:15px;
+        color:#1e3a8a;
+    }
+    table{width:100%;border-collapse:collapse;}
+    thead{background:#1e3a8a;color:#fff;}
+    th,td{
+        padding:10px;border:1px solid #e5e7eb;text-align:center;
+    }
+    tbody tr:nth-child(even){background:#f9fafb;}
+    input.nota{
+        width:70px;padding:6px;text-align:center;
+        border-radius:4px;border:1px solid #cbd5e1;
+    }
+    .summary{
+        margin-top:20px;
+        display:flex;
+        gap:25px;
+        font-weight:700;
+    }
+    .actions{
+        margin-top:20px;
+        display:flex;
+        gap:10px;
+    }
+    button{
+        padding:10px 20px;
+        border:none;border-radius:6px;
+        font-weight:600;cursor:pointer;
+    }
+    .calc{background:#16a34a;color:#fff;}
+    .save{background:#2563eb;color:#fff;}
+    .locked{
+        background:#fee2e2;
+        color:#991b1b;
+        padding:12px;
+        border-radius:6px;
+        margin-top:15px;
+        font-weight:600;
+    }
+    .message {
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        display: none;
+    }
+    .message.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        display: block;
+    }
+    .message.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        display: block;
+    }
+
+    /* Estilos para el autocompletado */
+    .suggestions-box {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 0 0 6px 6px;
+        max-height: 250px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .suggestion-item {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 14px;
+        color: #334155;
+    }
+    .suggestion-item:hover {
+        background-color: #f8fafc;
+        color: #2563eb;
+    }
+    .suggestion-item strong {
+        color: #1e293b;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <header>
+        <h1>📝 Registro de Notas Académicas</h1>
+        <nav id="main-nav">
+            <!-- Se llena dinámicamente según el rol -->
+        </nav>
+    </header>
+
+    <div class="content">
+        <div id="message" class="message"></div>
+
+        <!-- FILTROS DE SELECCIÓN -->
+        <div class="filters">
+            <div style="position: relative;">
+                <input type="text" id="searchStudent" placeholder="Buscar estudiante (Nombre o Matrícula)..." autocomplete="off">
+                <input type="hidden" id="estudianteSelect">
+                <div id="suggestions" class="suggestions-box"></div>
+            </div>
+            
+            <select id="materiaSelect" onchange="onMateriaChange()">
+                <option value="">Asignatura</option>
+            </select>
+            
+            <select id="gradoSelect" onchange="onFilterChange()" style="display:none;">
+                <option value="">Grado</option>
+            </select>
+
+            <select id="periodoSelect" onchange="onFilterChange()">
+                <option value="">Período</option>
+            </select>
+        </div>
+
+<!-- TABLA DE CALIFICACIONES -->
+<div class="table-box" id="tableBox" style="display:none;">
+    <div class="table-title" id="tableTitle">
+        Calificaciones
+    </div>
+
+    <table>
+    <thead>
+    <tr>
+        <th>Competencia</th>
+        <th id="headerP">P1</th>
+        <th id="headerRP">RP1</th>
+    </tr>
+    </thead>
+    <tbody id="gradesBody">
+        <!-- Rows will be injected here -->
+    </tbody>
+    </table>
+
+    <div class="summary">
+        <div>Promedio del Período: <span id="promedioPeriodo" style="color:#2563eb">0.00</span></div>
+        <div>Estado: <span id="estadoPeriodo" style="color:#16a34a">-</span></div>
+    </div>
+
+    <div class="actions">
+        <button class="calc" onclick="calcularPromedio()">Calcular</button>
+        <button class="save" onclick="guardarNotas()">Guardar</button>
+    </div>
+</div>
+
+    </div>
+</div>
+
+<script>
+    const baseUrl = './index.php';
+    let token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    let allEstudiantes = [];
+    let allMaterias = [];
+    let currentCompetencias = [];
+    let currentGrades = [];
+
+    if (!token) {
+        window.location.href = './login.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setupNavigation();
+        loadInitialData();
+    });
+
+    function setupNavigation() {
+        const nav = document.getElementById('main-nav');
+        const rol = (user.rol || '').toLowerCase();
+
+        if (rol === 'profesor') {
+            nav.innerHTML = `
+                <a href="./panel_profesor.html" style="background: #667eea; color: white;">⬅ Volver al Panel</a>
+                <a href="#" onclick="logout()" class="logout">Salir</a>
+            `;
+        } else {
+            // Menú completo para admin
+            nav.innerHTML = `
+                <a href="./dashboard.html">Dashboard</a>
+                <a href="./usuarios.html">Usuarios</a>
+                <a href="./estudiantes.html">Estudiantes</a>
+                <a href="./estudiantes_tecnicos.html">Estudiantes Técnicos</a>
+                <a href="./profesores.html">Profesores</a>
+                <a href="./materias.html">Materias</a>
+                <a href="./materias_tecnicas.html">Módulos</a>
+                <a href="./notas.html" style="background: #667eea; color: white;">Notas</a>
+                <a href="./pagos.html">Pagos</a>
+                <a href="./generar_qr.html">Generar QR</a>
+                <a href="#" onclick="logout()" class="logout">Salir</a>
+            `;
+        }
+    }
+
+    async function loadInitialData() {
+        try {
+            const [estudiantesRes, materiasRes, periodosRes] = await Promise.all([
+                fetch(`${baseUrl}/estudiantes`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${baseUrl}/calificaciones-academicas/asignaturas`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${baseUrl}/calificaciones-academicas/periodos`, { headers: { 'Authorization': `Bearer ${token}` } })
+            ]);
+
+            const estudiantesData = await estudiantesRes.json();
+            const materiasData = await materiasRes.json();
+            const periodosData = await periodosRes.json();
+
+            allEstudiantes = estudiantesData.data || estudiantesData;
+            allMaterias = materiasData.data || materiasData;
+            const allPeriodos = periodosData.data || periodosData;
+
+            populateSelect('materiaSelect', allMaterias, 'id_asignatura', item => {
+                // Si el grado es muy largo (multigrado), mostrar solo el nombre o un formato corto
+                if (item.grado && item.grado.length > 5) {
+                    return `${item.nombre} (Multigrado)`;
+                }
+                return `${item.nombre} - ${item.grado}`;
+            });
+            populateSelect('periodoSelect', allPeriodos, 'id_periodo', 'nombre');
+            
+            setupSearch();
+
+            // Check URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            const materiaParam = urlParams.get('materia');
+            if (materiaParam) {
+                const select = document.getElementById('materiaSelect');
+                select.value = materiaParam;
+                
+                // Bloquear el selector para evitar cambios
+                select.disabled = true;
+                select.style.backgroundColor = "#f1f5f9";
+                select.style.cursor = "not-allowed";
+            }
+
+        } catch (error) {
+            console.error('Error loading data:', error);
+            showMessage('Error cargando datos iniciales', 'error');
+        }
+    }
+
+    function populateSelect(id, data, valueKey, labelKeyOrFn) {
+        const select = document.getElementById(id);
+        // Keep first option
+        const first = select.firstElementChild;
+        select.innerHTML = '';
+        select.appendChild(first);
+
+        data.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item[valueKey];
+            opt.textContent = typeof labelKeyOrFn === 'function' ? labelKeyOrFn(item) : item[labelKeyOrFn];
+            select.appendChild(opt);
+        });
+    }
+
+    function setupSearch() {
+        const input = document.getElementById('searchStudent');
+        const suggestionsBox = document.getElementById('suggestions');
+
+        // Mostrar sugerencias al hacer foco si hay materia seleccionada
+        input.addEventListener('focus', function() {
+            if (this.value.trim().length > 0 || document.getElementById('materiaSelect').value) {
+                this.dispatchEvent(new Event('input'));
+            }
+        });
+
+        input.addEventListener('input', function() {
+            const term = this.value.toLowerCase().trim();
+            
+            // Obtener grado de la materia seleccionada para filtrar
+            const materiaId = document.getElementById('materiaSelect').value;
+            let gradoFilter = null;
+            if (materiaId) {
+                const materia = allMaterias.find(m => m.id_asignatura == materiaId);
+                if (materia) gradoFilter = materia.grado;
+            }
+
+            // Permitir búsqueda vacía si hay materia seleccionada (para ver lista completa del grado)
+            if (term.length < 1 && !gradoFilter) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+
+            // Safe filter handling nulls
+            const filtered = allEstudiantes.filter(e => {
+                // Filtrar por grado si hay materia seleccionada
+                if (gradoFilter) {
+                    const gradosMateria = gradoFilter.toString().split(',').map(g => g.trim());
+                    const gradoEstudiante = e.grado ? e.grado.toString() : '';
+                    
+                    // Si el usuario seleccionó un grado específico en el dropdown, usar ese
+                    const gradoSeleccionado = document.getElementById('gradoSelect').value;
+                    if (gradoSeleccionado) {
+                        if (gradoEstudiante !== gradoSeleccionado) return false;
+                    } else {
+                        // Si no, permitir cualquiera de los grados de la materia
+                        if (!gradosMateria.includes(gradoEstudiante)) return false;
+                    }
+                }
+
+                const nombre = e.nombre ? e.nombre.toLowerCase() : '';
+                const apellido = e.apellido ? e.apellido.toLowerCase() : '';
+                const matricula = e.matricula ? e.matricula.toLowerCase() : '';
+                
+                return nombre.includes(term) || apellido.includes(term) || matricula.includes(term);
+            });
+
+            if (filtered.length > 0) {
+                suggestionsBox.innerHTML = '';
+                filtered.forEach(e => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `<strong>${e.nombre} ${e.apellido}</strong> <br> <small>${e.matricula || 'Sin matrícula'}</small>`;
+                    div.onclick = () => selectStudent(e);
+                    suggestionsBox.appendChild(div);
+                });
+                suggestionsBox.style.display = 'block';
+            } else {
+                suggestionsBox.innerHTML = '<div class="suggestion-item" style="cursor:default; color:#94a3b8;">No se encontraron resultados</div>';
+                suggestionsBox.style.display = 'block';
+            }
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target !== input && e.target !== suggestionsBox && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+    }
+
+    function selectStudent(estudiante) {
+        document.getElementById('searchStudent').value = `${estudiante.nombre} ${estudiante.apellido}`;
+        document.getElementById('estudianteSelect').value = estudiante.id;
+        document.getElementById('suggestions').style.display = 'none';
+        onFilterChange();
+    }
+
+    function onMateriaChange() {
+        const materiaId = document.getElementById('materiaSelect').value;
+        const gradoSelect = document.getElementById('gradoSelect');
+        
+        gradoSelect.innerHTML = '<option value="">Grado</option>';
+        gradoSelect.style.display = 'none';
+
+        if (materiaId) {
+            const materia = allMaterias.find(m => m.id_asignatura == materiaId);
+            if (materia && materia.grado) {
+                const grados = materia.grado.toString().split(',').map(g => g.trim());
+                
+                // Si hay más de un grado, mostrar el selector
+                if (grados.length > 1) {
+                    grados.forEach(g => {
+                        const opt = document.createElement('option');
+                        opt.value = g;
+                        opt.textContent = `${g}º Grado`;
+                        gradoSelect.appendChild(opt);
+                    });
+                    gradoSelect.style.display = 'inline-block';
+                } else {
+                    // Si solo hay uno, se usa implícitamente pero no se muestra el selector
+                    // Opcional: Podríamos mostrarlo deshabilitado o preseleccionado
+                }
+            }
+        }
+        onFilterChange();
+    }
+
+    async function onFilterChange() {
+        const materiaId = document.getElementById('materiaSelect').value;
+        const periodo = document.getElementById('periodoSelect').value;
+        const estudianteId = document.getElementById('estudianteSelect').value;
+
+        if (materiaId && periodo && estudianteId) {
+            await loadGrades(materiaId, periodo, estudianteId);
+        } else {
+            document.getElementById('tableBox').style.display = 'none';
+        }
+    }
+
+    async function loadGrades(materiaId, periodo, estudianteId) {
+        try {
+            // 1. Fetch Competencies for the Subject
+            const compRes = await fetch(`${baseUrl}/calificaciones-academicas/competencias/${materiaId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const compData = await compRes.json();
+            currentCompetencias = compData.data || [];
+
+            if (currentCompetencias.length === 0) {
+                showMessage('No hay competencias definidas para esta asignatura', 'error');
+                document.getElementById('tableBox').style.display = 'none';
+                return;
+            }
+
+            // 2. Fetch Existing Grades
+            const gradesRes = await fetch(`${baseUrl}/calificaciones-academicas?id_estudiante=${estudianteId}&id_asignatura=${materiaId}&id_periodo=${periodo}&detailed=true`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const gradesData = await gradesRes.json();
+            currentGrades = gradesData.data || [];
+
+            renderTable(periodo);
+        } catch (error) {
+            console.error('Error loading grades:', error);
+            showMessage('Error cargando calificaciones', 'error');
+        }
+    }
+
+    function renderTable(periodo) {
+        const tbody = document.getElementById('gradesBody');
+        tbody.innerHTML = '';
+        document.getElementById('tableTitle').textContent = `Calificaciones del Período P${periodo}`;
+        
+        // Update headers dynamically
+        document.getElementById('headerP').textContent = `P${periodo}`;
+        document.getElementById('headerRP').textContent = `RP${periodo}`;
+        
+        document.getElementById('tableBox').style.display = 'block';
+
+        currentCompetencias.forEach(comp => {
+            // Find existing grade for this competence
+            const grade = currentGrades.find(g => g.id_competencia == comp.id_competencia);
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-align:left;">${comp.nombre}</td>
+                <td><input type="number" class="nota input-nota" data-comp="${comp.id_competencia}" value="${grade ? grade.nota : ''}" min="0" max="100"></td>
+                <td><input type="number" class="nota input-rp" data-comp="${comp.id_competencia}" value="${grade ? (grade.rp || '') : ''}" min="0" max="100"></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        calcularPromedio();
+    }
+
+    function calcularPromedio() {
+        const rows = document.querySelectorAll('#gradesBody tr');
+        let sum = 0;
+        let count = 0;
+
+        rows.forEach(row => {
+            const notaInput = row.querySelector('.input-nota');
+            const rpInput = row.querySelector('.input-rp');
+            
+            if (notaInput) {
+                let val = parseFloat(notaInput.value);
+                
+                // Si hay nota de recuperación, usar esa en lugar de la nota normal
+                if (rpInput && rpInput.value !== '') {
+                    const rpVal = parseFloat(rpInput.value);
+                    if (!isNaN(rpVal)) {
+                        val = rpVal;
+                    }
+                }
+                
+                if (!isNaN(val)) {
+                    sum += val;
+                    count++;
+                }
+            }
+        });
+
+        const promedio = count > 0 ? (sum / count).toFixed(2) : '0.00';
+        document.getElementById('promedioPeriodo').textContent = promedio;
+        
+        const estadoEl = document.getElementById('estadoPeriodo');
+        if (promedio >= 70) {
+            estadoEl.textContent = 'APROBADO';
+            estadoEl.style.color = '#16a34a';
+        } else {
+            estadoEl.textContent = 'REPROBADO';
+            estadoEl.style.color = '#dc2626';
+        }
+    }
+
+    async function guardarNotas() {
+        const materiaId = document.getElementById('materiaSelect').value;
+        const periodo = document.getElementById('periodoSelect').value;
+        const estudianteId = document.getElementById('estudianteSelect').value;
+        
+        const notas = {};
+        const inputs = document.querySelectorAll('.input-nota');
+        
+        inputs.forEach(input => {
+            const compId = input.dataset.comp;
+            const notaVal = input.value.trim();
+            const rpInput = document.querySelector(`.input-rp[data-comp="${compId}"]`);
+            const rpVal = rpInput ? rpInput.value.trim() : '';
+
+            // Guardar si hay nota O hay recuperación (incluso si uno de los dos es vacío)
+            if (notaVal !== '' || rpVal !== '') {
+                notas[compId] = {
+                    nota: notaVal !== '' ? parseFloat(notaVal) : null,
+                    rp: rpVal !== '' ? parseFloat(rpVal) : null
+                };
+            }
+        });
+
+        if (Object.keys(notas).length === 0) {
+            showMessage('No hay notas para guardar', 'error');
+            return;
+        }
+
+        const payload = {
+            id_estudiante: estudianteId,
+            id_asignatura: materiaId,
+            id_periodo: periodo,
+            id_anio: new Date().getFullYear(), // Use current year to match backend default
+            notas: notas
+        };
+
+        try {
+            const response = await fetch(`${baseUrl}/calificaciones-academicas`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showMessage('Notas guardadas exitosamente', 'success');
+                // Reload grades to confirm save and update UI state if needed
+                await loadGrades(materiaId, periodo, estudianteId);
+            } else {
+                showMessage(result.mensaje || 'Error al guardar notas', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving:', error);
+            showMessage('Error de conexión al guardar', 'error');
+        }
+    }
+
+    function showMessage(text, type) {
+        const el = document.getElementById('message');
+        el.textContent = text;
+        el.className = `message ${type}`;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = './login.html';
+    }
+</script>
+
+</body>
+</html>

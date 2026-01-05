@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Gestión de Módulos Técnicos</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    header {
+        background: white;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    header h1 {
+        color: #333;
+        font-size: 24px;
+    }
+
+    nav a {
+        color: #667eea;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin-left: 10px;
+    }
+
+    nav a:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    nav a.logout {
+        color: #e74c3c;
+    }
+
+    .content {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 20px;
+    }
+
+    .header-content h2 {
+        color: #333;
+        font-size: 28px;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background: #5568d3;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th, td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+
+    .btn-cancel {
+        background: #94a3b8;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📚 Módulos Formativos</h1>
+        <nav>
+            <a href="./dashboard.html">Dashboard</a>
+            <a href="./usuarios.html">Usuarios</a>
+            <a href="./estudiantes.html">Estudiantes</a>
+            <a href="./estudiantes_tecnicos.html">Estudiantes Técnicos</a>
+            <a href="./profesores.html">Profesores</a>
+            <a href="./materias.html">Materias</a>
+            <a href="./materias_tecnicas.html" style="background: #667eea; color: white;">Módulos</a>
+            <a href="./notas.html">Notas</a>
+            <a href="./pagos.html">Pagos</a>
+            <a href="./generar_qr.html">Generar QR</a>
+            <a href="#" onclick="logout()" class="logout">Salir</a>
+        </nav>
+    </header>
+
+    <div class="content">
+        <div class="header-content">
+            <h2>Listado de Módulos</h2>
+            <button class="btn-primary" onclick="openModal()">+ Nuevo Módulo</button>
+        </div>
+
+        <table id="tablaModulos">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Especialidad</th>
+                    <th>Grado</th>
+                    <th>Profesor</th>
+                    <th>Cant. RAs</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Crear/Editar -->
+<div id="modalModulo" class="modal">
+    <div class="modal-content">
+        <h2 id="modalTitle" style="margin-bottom: 20px; color: #333;">Nuevo Módulo</h2>
+        <form id="formModulo" onsubmit="guardarModulo(event)">
+            <input type="hidden" id="id_modulo">
+            
+            <div class="form-group">
+                <label>Nombre del Módulo</label>
+                <input type="text" id="nombre" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Código</label>
+                <input type="text" id="codigo" required>
+            </div>
+
+            <div class="form-group">
+                <label>Especialidad</label>
+                <input type="text" id="especialidad" required>
+            </div>
+
+            <div class="form-group">
+                <label>Grado</label>
+                <select id="grado" required>
+                    <option value="4to">4to de Secundaria</option>
+                    <option value="5to">5to de Secundaria</option>
+                    <option value="6to">6to de Secundaria</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Profesor Encargado</label>
+                <select id="id_profesor">
+                    <option value="">Seleccione...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Cantidad de Resultados de Aprendizaje (RA)</label>
+                <select id="cantidad_ra" required>
+                    <option value="1">1 RA</option>
+                    <option value="2">2 RAs</option>
+                    <option value="3">3 RAs</option>
+                    <option value="4">4 RAs</option>
+                    <option value="5">5 RAs</option>
+                    <option value="6">6 RAs</option>
+                    <option value="7">7 RAs</option>
+                    <option value="8">8 RAs</option>
+                    <option value="9">9 RAs</option>
+                    <option value="10">10 RAs</option>
+                </select>
+                <small style="color:#64748b">Esto definirá la estructura de calificación.</small>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const baseUrl = './index.php';
+    let token = localStorage.getItem('token');
+
+    if (!token) window.location.href = './login.html';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadModulos();
+        loadProfesores();
+    });
+
+    async function loadProfesores() {
+        try {
+            const res = await fetch(`${baseUrl}/calificaciones-tecnicas/profesores`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            const select = document.getElementById('id_profesor');
+            select.innerHTML = '<option value="">Seleccione...</option>';
+            (data.data || []).forEach(p => {
+                select.innerHTML += `<option value="${p.id}">${p.nombre} ${p.apellido}</option>`;
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function loadModulos() {
+        try {
+            const res = await fetch(`${baseUrl}/calificaciones-tecnicas/modulos`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            const tbody = document.querySelector('#tablaModulos tbody');
+            tbody.innerHTML = '';
+
+            (data.data || []).forEach(m => {
+                const profesor = m.nombre_profesor ? `${m.nombre_profesor} ${m.apellido_profesor}` : '<span style="color:#94a3b8">Sin asignar</span>';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${m.codigo || '-'}</td>
+                        <td>${m.nombre}</td>
+                        <td>${m.especialidad || '-'}</td>
+                        <td>${m.grado || '-'}</td>
+                        <td>${profesor}</td>
+                        <td><strong>${m.cantidad_ra || 1}</strong></td>
+                        <td>
+                            <button onclick='editarModulo(${JSON.stringify(m)})' style="color:blue;cursor:pointer;border:none;background:none;">Editar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (e) {
+            console.error(e);
+            alert('Error cargando módulos');
+        }
+    }
+
+    function openModal() {
+        document.getElementById('formModulo').reset();
+        document.getElementById('id_modulo').value = '';
+        document.getElementById('modalTitle').textContent = 'Nuevo Módulo';
+        document.getElementById('modalModulo').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('modalModulo').style.display = 'none';
+    }
+
+    function editarModulo(m) {
+        document.getElementById('id_modulo').value = m.id_modulo;
+        document.getElementById('nombre').value = m.nombre;
+        document.getElementById('codigo').value = m.codigo;
+        document.getElementById('especialidad').value = m.especialidad;
+        document.getElementById('grado').value = m.grado;
+        document.getElementById('cantidad_ra').value = m.cantidad_ra || 1;
+        document.getElementById('id_profesor').value = m.id_profesor || '';
+        
+        document.getElementById('modalTitle').textContent = 'Editar Módulo';
+        document.getElementById('modalModulo').style.display = 'flex';
+    }
+
+    async function guardarModulo(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('id_modulo').value;
+        const payload = {
+            nombre: document.getElementById('nombre').value,
+            codigo: document.getElementById('codigo').value,
+            especialidad: document.getElementById('especialidad').value,
+            grado: document.getElementById('grado').value,
+            cantidad_ra: document.getElementById('cantidad_ra').value,
+            id_profesor: document.getElementById('id_profesor').value
+        };
+
+        const url = id 
+            ? `${baseUrl}/calificaciones-tecnicas/modulos/${id}`
+            : `${baseUrl}/calificaciones-tecnicas/modulos/crear`;
+        
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                closeModal();
+                loadModulos();
+            } else {
+                alert('Error al guardar');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error de conexión');
+        }
+    }
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = './login.html';
+    }
+</script>
+</body>
+</html>

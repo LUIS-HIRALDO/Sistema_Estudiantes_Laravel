@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Calificaciones - Selección de Modalidad</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        nav a.logout {
+            color: #e74c3c;
+        }
+
+        .content {
+            /* background: white;  Removed white background to keep cards on gradient or maybe put cards in white box? 
+               The original design had cards on gradient. 
+               But other pages have white content box.
+               Let's keep cards on gradient but inside container structure.
+               Actually, if I put cards inside a white box, they might look weird if they are also white cards.
+               Let's make .content transparent for this page or just not use .content class for the wrapper if I want to keep cards.
+               
+               Let's try to put them in a white box like other pages, and remove the white background from cards?
+               Or keep cards as they are and just center them.
+            */
+            text-align: center;
+        }
+
+        h2 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: white;
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #ffffff;
+            color: #0f172a;
+            border-radius: 14px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
+            text-align: left;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+        }
+
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .card h3 {
+            margin: 10px 0;
+            font-size: 22px;
+            text-align: center;
+        }
+
+        .card p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #475569;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .academica {
+            background: #2563eb;
+        }
+
+        .tecnica {
+            background: #16a34a;
+        }
+
+        .btn {
+            margin-top: 20px;
+            display: block;
+            width: 100%;
+            padding: 12px 22px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .btn-academica {
+            background: #2563eb;
+        }
+
+        .btn-academica:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-tecnica {
+            background: #16a34a;
+        }
+
+        .btn-tecnica:hover {
+            background: #15803d;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(22, 163, 74, 0.4);
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 13px;
+            opacity: 0.8;
+            color: white;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>📚 Sistema de Evaluación</h1>
+            <nav>
+                <a href="./dashboard.html">Dashboard</a>
+                <a href="./usuarios.html">Usuarios</a>
+                <a href="./estudiantes.html">Estudiantes</a>
+                <a href="./estudiantes_tecnicos.html">Estudiantes Técnicos</a>
+                <a href="./profesores.html">Profesores</a>
+                <a href="./materias.html">Materias</a>
+                <a href="./materias_tecnicas.html">Módulos</a>
+                <a href="./notas.html" style="background: #667eea; color: white;">Notas</a>
+                <a href="./pagos.html">Pagos</a>
+                <a href="./generar_qr.html">Generar QR</a>
+                <a href="#" onclick="logout()" class="logout">Salir</a>
+            </nav>
+        </header>
+
+        <div class="content">
+            <h2>Sistema de Calificaciones</h2>
+            <div class="subtitle">
+                Seleccione la modalidad para gestionar las notas de los estudiantes
+            </div>
+
+            <div class="cards">
+                <!-- MODALIDAD ACADÉMICA -->
+                <div class="card">
+                    <div class="badge academica">Académica</div>
+                    <div class="card-icon">📘</div>
+                    <h3>Modalidad Académica</h3>
+                    <p>
+                        Gestión de calificaciones por asignaturas académicas,
+                        evaluadas mediante competencias específicas, períodos
+                        (P1, P2, P3, P4) y cálculo ponderado 70% / 30%.
+                    </p>
+                    <a href="./academica.html" class="btn btn-academica">
+                        Entrar a Académica
+                    </a>
+                </div>
+
+                <!-- MODALIDAD TÉCNICO PROFESIONAL -->
+                <div class="card">
+                    <div class="badge tecnica">Técnico Profesional</div>
+                    <div class="card-icon">🛠️</div>
+                    <h3>Modalidad Técnico Profesional</h3>
+                    <p>
+                        Gestión de calificaciones por módulos formativos,
+                        evaluados mediante Resultados de Aprendizaje (RA),
+                        con porcentajes variables hasta completar el 100%.
+                    </p>
+                    <a href="./tecnico.html" class="btn btn-tecnica">
+                        Entrar a Técnico Profesional
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer">
+                Sistema de Evaluación Escolar · Uso Administrativo
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = './login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = './login.html';
+        }
+    </script>
+
+</body>
+</html>
